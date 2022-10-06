@@ -13,13 +13,26 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
         self.setup_control()
 
-    def setup_control(self):
-        self.ui.listWidget_2.setVisible(False)
-        self.ui.pushButton.setVisible(False)
-        self.ui.centralwidget.setWindowTitle('List Test')
-        self.ui.pushButton.clicked.connect(self.btn_sendto)
-        self.ui.file_button.clicked.connect(self.open_file)
+    def UI_variable_manage(self):
+        #-----Button 管理區-----
+        self.btn_openFile = self.ui.btn_openfile
+        self.btn_selectTest = self.ui.btn_testselect
+        self.btn_gotoTest = self.ui.btn_gototest
 
+        #-----list 管理區-----
+        self.ls_file_test_item = self.ui.ls_fileTestItem
+        self.ls_select_test_item = self.ui.ls_selectTestItem
+
+
+
+    def setup_control(self):
+        self.UI_variable_manage()      # 與UI變數管理宣告
+        self.ls_select_test_item.setVisible(False)
+        self.btn_selectTest.setVisible(False)
+        # self.ui.pushButton.setVisible(False)
+        self.ui.centralwidget.setWindowTitle('List Test')
+        self.btn_selectTest.clicked.connect(self.btn_sendto)
+        self.btn_openFile.clicked.connect(self.open_file)
         self.test_item()
 
     def open_file(self):
@@ -33,24 +46,20 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         filename,filetype= QFileDialog.getOpenFileName(self,"Open file",
                                                          "./",               # start path
                                                          "Txt files(*.txt)") # 限制檔案類型
-        listwidget = self.ui.listWidget
         if filename:
-            self.ui.listWidget_2.setVisible(True)
-            self.ui.pushButton.setVisible(True)
+            self.ls_select_test_item.setVisible(True)
+            self.btn_selectTest.setVisible(True)
             f = open(filename)
             for i in f.readlines():
                 data = i.split('\n')[0]
-                listwidget.addItem(data)
-
+                self.ls_file_test_item.addItem(data)
 
         # self.ui.show_file_path.setText(filename)
 
     def test_item(self):
-        listwidget = self.ui.listWidget
-        listwidget2 = self.ui.listWidget_2
-
         # 開啟一次選擇多個選項
-        listwidget.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+        self.ls_file_test_item.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+
         # delet=listwidget.takeItem(1)    # 刪除第二個item
         # listwidget2.addItem(delet)      # 添加到listwidget2
         # listwidget.insertItem(0, 'Y')   # 添加純文字項目，加到第0項
@@ -66,17 +75,17 @@ class MainWindow_controller(QtWidgets.QMainWindow):
 
         # listwidget.setFlow(QtWidgets.QListView.LeftToRight)  # 改成水平顯示
 
-        listwidget.doubleClicked.connect(self.showitem)
-        listwidget2.doubleClicked.connect(self.showitem2)
+        self.ls_file_test_item.doubleClicked.connect(self.showitem)
+        self.ls_select_test_item.doubleClicked.connect(self.showitem2)
 
     def showitem(self):
-        text = self.ui.listWidget.currentItem().text()  # 取得項目文字
-        num = self.ui.listWidget.currentIndex().row()  # 取得項目編號
-        self.ui.listWidget_2.addItem(text)
+        text = self.ls_file_test_item.currentItem().text()  # 取得項目文字
+        num = self.ls_file_test_item.currentIndex().row()  # 取得項目編號
+        self.ls_select_test_item.addItem(text)
 
     def showitem2(self):
-        num = self.ui.listWidget_2.currentIndex().row()
-        self.ui.listWidget_2.takeItem(num)
+        num = self.ls_select_test_item.currentIndex().row()
+        self.ls_select_test_item.takeItem(num)
 
     def create_item(self,text, img):
         item = QtWidgets.QListWidgetItem()  # 建立清單項目
@@ -85,13 +94,10 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         return item  # 返回清單項目
 
     def btn_sendto(self):
-        items = self.ui.listWidget.selectedItems()
+        items = self.ls_file_test_item.selectedItems()
         # self.ui.listWidget_2.addItem(items[1].text())
         for i in items:
-            self.ui.listWidget_2.addItem(i.text())
-
-
-
+            self.ls_select_test_item.addItem(i.text())
 
 
 if __name__ == '__main__':
