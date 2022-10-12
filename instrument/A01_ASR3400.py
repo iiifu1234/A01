@@ -22,8 +22,8 @@ class ASR3400:
     def set_voltage(self, voltage):
         return ';:VOLT ' + str(voltage) + self.endstr
 
-    def set_voltage_range(self, vol=100):
-        return ';:VOLT:RANG ' + str(vol) + self.endstr
+    def set_voltage_range(self, voltage=100):
+        return ';:VOLT:RANG ' + str(voltage) + self.endstr
 
     def set_output(self, value=0):
         if value == 1:
