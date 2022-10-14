@@ -39,7 +39,6 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         self.ls_file_test_item = self.ui.ls_fileTestItem
         self.ls_select_test_item = self.ui.ls_selectTestItem
 
-
         # print(self.wtable.rowCount())
         # -----table 管理區-----
         self.wtable = self.ui.testTable
@@ -54,6 +53,7 @@ class MainWindow_controller(QtWidgets.QMainWindow):
 
         # self.btn_selectTest.clicked.connect(self.btn_sendto)
         self.btn_openFile.clicked.connect(self.open_file)
+
         self.btn_gotoTest.clicked.connect(self.goto_test)
         self.wtable.itemDoubleClicked.connect(self.delete_test_item)
         self.test_item()
@@ -61,34 +61,21 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.run)
         self.timer.start(1)
-        self.time_counter = 0
+        self._1ms_time_counter = 0
+        self._100ms_timer = 0
         self._200ms_timer = 0
-
-    def delete_test_item(self, Item=None):
-        # 如果单元格对象为空
-        if Item is None:
-            return
-        else:
-            row = Item.row()  # 获取行数
-            col = Item.column()  # 获取列数 注意是column而不是col哦
-            text = Item.text()  # 获取内容
-            self.wtable.removeRow(row)
-            re_num = self.wtable.rowCount()
-            print(re_num)
-            for i in range(re_num):
-                newItem = QTableWidgetItem(str(i + 1))
-                newItem.setTextAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignBottom)  # 設置字體在中間|字體靠下
-                self.wtable.setItem(i, 0, newItem)
+        self.testcount = 0
 
     def run(self):
         # self.ui.label.setText(str(self._200ms_timer))  # show time_counter (by format)
-        if self.time_counter % 200 == 0:
+        if self._1ms_time_counter % 200 == 0:
             self._200ms_timer += 1
-            self.ui.label.hide()
-        else:
-            self.ui.label.show()
 
-        self.time_counter += 1  # time_counter + 1
+        if self._1ms_time_counter % 100 == 0:
+            self._100ms_timer += 1
+        self._1ms_time_counter += 1  # time_counter + 1
+        self.text_blinking((self.testcount, 3))
+        self.ui.label.setText(str(self.testcount))
 
     def testtable_init_fun(self):
         # newItem = QTableWidgetItem('1')
@@ -115,9 +102,7 @@ class MainWindow_controller(QtWidgets.QMainWindow):
 
         # 优化6：表格头的显示与隐藏
         self.wtable.verticalHeader().setVisible(False)
-        # self.testtable.horizontalHeader().setVisible(False)
 
-    def goto_test(self):
         # 优化7：在单元格内放置控件
         # ↓放置進度條↓
         style = '''
@@ -133,16 +118,31 @@ class MainWindow_controller(QtWidgets.QMainWindow):
                 width:1px;
             }
         '''
+        # self.testtable.horizontalHeader().setVisible(False)
         # gressbar = QProgressBar()
         # gressbar.setStyleSheet('QProgressBar{margin:3px}')
         # self.wtable.setStyleSheet(style)
         # self.gressbar_select(self.count,3,gressbar)
         # self.count +=1
         # ↓放入文字↓
-        label = QLabel()
-        label.setText('Wait')
+        # label = QLabel()
+        # label.setText('Wait')
         # self.label_setText(self.count, 3, label)
-        label.hide()
+        # label.hide()
+
+    def text_blinking(self, location):
+        # read_text = self.wtable.currentItem().text()  # 讀取table指定位置的值
+        color = QtGui.QColor(0, 100, 30)
+        if self._100ms_timer % 10 == 5:
+            self.set_fontcolor(self.wtable, 'Wait', location[0], location[1], color)
+        elif self._100ms_timer % 10 == 0:
+            self.set_fontcolor(self.wtable, '', location[0], location[1], color)
+
+    def goto_test(self):
+        test_list = []
+        row_count = self.wtable.rowCount()
+        for i in range(row_count):
+            test_list.append(self.wtable.item(i, 1).text())
 
     def label_setText(self, row, col, label):
         label.setStyleSheet('color: green')
@@ -157,6 +157,13 @@ class MainWindow_controller(QtWidgets.QMainWindow):
             gressbar.setValue(i + 1)
             time.sleep(0.01)
 
+    def set_fontcolor(self, table, text, row, col, color):
+        newItem = QTableWidgetItem(text)
+        newItem.setForeground(color)
+        newItem.setTextAlignment(QtCore.Qt.AlignCenter)
+        # newItem.setForeground(QtGui.QBrush(QtGui.QColor(color)))
+        table.setItem(row, col, newItem)
+
     def open_file(self):
         """
         可以直接使用 QFileDialog.getOpenFileName 這個已經設定好的函式，
@@ -169,20 +176,33 @@ class MainWindow_controller(QtWidgets.QMainWindow):
                                                          "./",  # start path
                                                          "Txt files(*.txt)")  # 限制檔案類型
         if filename:
+            init = True
             self.ls_select_test_item.setVisible(True)
-            # self.btn_selectTest.setVisible(True)
+            self.ls_file_test_item.clear()
             f = open(filename)
             for i in f.readlines():
                 keys = i.split('\n')[0].split(',')[0].upper()
                 self.test_dict[keys] = []
-                self.ls_file_test_item.addItem(keys)
+                if init:
+                    item = QListWidgetItem(keys)
+                    self.ls_file_test_item.addItem(item)
+                    self.ls_file_test_item.setCurrentItem(item)
+                    init = False
+                else:
+                    item = QListWidgetItem(keys)
+                    self.ls_file_test_item.addItem(item)
                 self.add_test_item(keys)
+
                 for j in i.split('\n')[0].split(','):
                     data = j.strip()
                     if data != keys:
                         self.test_dict[keys].append(data.upper())
-
-        # self.ui.show_file_path.setText(filename)
+            rows = self.wtable.rowCount()
+            for i in range(rows):
+                color = QtGui.QColor(0, 100, 30)
+                self.set_fontcolor(self.wtable, 'Wait', i, 3, color)
+            self.ls_text = self.ls_file_test_item.currentItem().text()
+            self.show_test_detail()
 
     def test_item(self):
         # 開啟一次選擇多個選項
@@ -201,13 +221,40 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         # item.setIcon(QtGui.QIcon('zcm.jpg'))
         # listwidget.setFlow(QtWidgets.QListView.LeftToRight)  # 改成水平顯示
 
-        self.ls_file_test_item.doubleClicked.connect(self.showitem)
-        self.ls_select_test_item.doubleClicked.connect(self.showitem2)
+        self.ls_file_test_item.doubleClicked.connect(self.show_file_test_item)
+        self.ls_file_test_item.clicked.connect(self.show_test_detail)
+        # self.ls_select_test_item.doubleClicked.connect(self.showitem2)
 
-    def showitem(self):
+    def show_test_detail(self):
+        self.ls_text = self.ls_file_test_item.currentItem().text()  # 取得項目文字
+        self.ls_select_test_item.clear()
+        for i in self.test_dict:
+            if self.ls_text == i:
+                num = 1
+                for detail in self.test_dict[i]:
+                    self.add_list_item(self.ls_select_test_item, f'{num}. {detail}')
+                    num += 1
+
+    def show_file_test_item(self):
         text = self.ls_file_test_item.currentItem().text()  # 取得項目文字
         num = self.ls_file_test_item.currentIndex().row()  # 取得項目編號
         self.add_test_item(text)
+
+    def delete_test_item(self, Item=None):
+        # 如果单元格对象为空
+        if Item is None:
+            return
+        else:
+            row = Item.row()  # 获取行数
+            col = Item.column()  # 获取列数 注意是column而不是col哦
+            text = Item.text()  # 获取内容
+            self.wtable.removeRow(row)
+            re_num = self.wtable.rowCount()
+
+            for i in range(re_num):
+                newItem = QTableWidgetItem(str(i + 1))
+                newItem.setTextAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignBottom)  # 設置字體在中間|字體靠下
+                self.wtable.setItem(i, 0, newItem)
 
     def showitem2(self):
         num = self.ls_select_test_item.currentIndex().row()
@@ -223,12 +270,14 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         newItem.setTextAlignment(QtCore.Qt.AlignCenter)
         self.wtable.setItem(row, 1, newItem)
 
-
     def create_item(self, text, img):
         item = QtWidgets.QListWidgetItem()  # 建立清單項目
         item.setText(text)  # 項目文字
         item.setIcon(QtGui.QIcon(img))  # 項目圖片
         return item  # 返回清單項目
+
+    def add_list_item(self, qlist, text):
+        qlist.addItem(text)
 
     def btn_sendto(self):
         items = self.ls_file_test_item.selectedItems()
@@ -242,6 +291,5 @@ if __name__ == '__main__':
 
     app = QtWidgets.QApplication(sys.argv)
     window = MainWindow_controller()
-
     window.show()
     sys.exit(app.exec_())
