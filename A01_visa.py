@@ -3,11 +3,11 @@ import time
 from threading import Thread
 from queue import Queue
 
-rm = pyvisa.ResourceManager()
-rm.close()
-time.sleep(0.01)
-rm = pyvisa.ResourceManager()
-allports = rm.list_resources()
+# rm = pyvisa.ResourceManager()
+# rm.close()
+# time.sleep(0.01)
+# rm = pyvisa.ResourceManager()
+# allports = rm.list_resources()
 
 
 class VISACMD:
@@ -16,8 +16,8 @@ class VISACMD:
         rm.close()
         time.sleep(0.01)
         rm = pyvisa.ResourceManager()
-        allports = rm.list_resources()
-        return rm, allports
+        ports = rm.list_resources()
+        return rm, ports
 
     def ask_idn(self, rm, q, port=''):
         try:
@@ -37,30 +37,29 @@ class VISACMD:
             inst.close()
             return 'Error: None'
 
-    def visa_port_select(self, rm, port='', cmd='*IDN?'):
+    def query_data(self, rm, port='', cmd='*IDN?'):
         inst = rm.open_resource(port)
-        inst.write(cmd)
         try:
-            data = inst.read()
-            return data
+            data = inst.query(cmd)
+            return  data
         except Exception:
-            return
+            return  False
+
 
 
 if __name__ == "__main__":
     pass
-    # va = VISACMD()
-    # rm = va.open_visa()
-    # q = Queue()
-    # tjobs = []
-    # for i in rm[1]:
-    #     t = Thread(target=va.ask_idn, args=(rm[0], q, i))
-    #     tjobs.append(t)
-    #     t.start()
-    # for t in tjobs:
-    #     t.join()
-    # print(q.qsize())
-    # for i in range(q.qsize()):
-    #     print(q.get())
-    #
-    # rm[0].close()
+    va = VISACMD()
+    rm = va.open_visa()
+    q = Queue()
+    tjobs = []
+    for i in rm[1]:
+        t = Thread(target=va.ask_idn, args=(rm[0], q, i))
+        tjobs.append(t)
+        t.start()
+    for t in tjobs:
+        t.join()
+    for i in range(q.qsize()):
+        print(q.get())
+
+    rm[0].close()

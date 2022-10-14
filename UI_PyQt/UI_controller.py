@@ -1,4 +1,5 @@
 import time
+from A01_ui_visa_interface import UI_VISA_Interface as ui_visa
 from PyQt5.QtWidgets import *
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtWidgets import QFileDialog
@@ -16,6 +17,8 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         self.setWindowTitle('QICON Test')
         # title 旁的ICON
         self.setWindowIcon(QtGui.QIcon('image/gwinstek_logo.ico'))
+        # self.resize(490, 660)
+
 
         # StatusBar
         self.statusBar().showMessage('GW TestStand!!!')
@@ -23,7 +26,7 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         self.setup_control()
 
     def UI_variable_manage(self):
-        # -----Button 管理區-----
+        # -----Button area-----
         self.btn_openFile = self.ui.btn_openfile
         self.btn_openFile.setText('')
         self.btn_openFile.setIcon(QtGui.QIcon('image/blue-folder-horizontal-open.png'))
@@ -35,25 +38,25 @@ class MainWindow_controller(QtWidgets.QMainWindow):
 
         self.btn_gotoTest = self.ui.btn_gototest
 
-        # -----list 管理區-----
+        # -----list area-----
+        self.ls_detail = self.ui.listWidget
         self.ls_file_test_item = self.ui.ls_fileTestItem
         self.ls_select_test_item = self.ui.ls_selectTestItem
 
         # print(self.wtable.rowCount())
-        # -----table 管理區-----
+        # -----table area-----
         self.wtable = self.ui.testTable
+
+        # -----Label area------
+        self.test_label = self.ui.label
+        self.test_label.setVisible(False)
 
         # -----variable 管理區---
         self.test_dict = {}
 
     def setup_control(self):
         self.ls_select_test_item.setVisible(False)
-        # self.btn_selectTest.setVisible(False)
-        # self.ui.pushButton.setVisible(False)
-
-        # self.btn_selectTest.clicked.connect(self.btn_sendto)
         self.btn_openFile.clicked.connect(self.open_file)
-
         self.btn_gotoTest.clicked.connect(self.goto_test)
         self.wtable.itemDoubleClicked.connect(self.delete_test_item)
         self.test_item()
@@ -139,10 +142,10 @@ class MainWindow_controller(QtWidgets.QMainWindow):
             self.set_fontcolor(self.wtable, '', location[0], location[1], color)
 
     def goto_test(self):
-        test_list = []
-        row_count = self.wtable.rowCount()
-        for i in range(row_count):
-            test_list.append(self.wtable.item(i, 1).text())
+        v = ui_visa()
+        rm,ports = v.goto_open_visa()
+        data = v.goto_query_cmd(rm,'ASRL3::INSTR','*IDN?')
+        print(data)
 
     def label_setText(self, row, col, label):
         label.setStyleSheet('color: green')
@@ -277,13 +280,15 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         return item  # 返回清單項目
 
     def add_list_item(self, qlist, text):
-        qlist.addItem(text)
+        item = QListWidgetItem(text)
+        qlist.addItem(item)
 
     def btn_sendto(self):
         items = self.ls_file_test_item.selectedItems()
         # self.ui.listWidget_2.addItem(items[1].text())
         for i in items:
             self.ls_select_test_item.addItem(i.text())
+
 
 
 if __name__ == '__main__':

@@ -1,7 +1,9 @@
 
-import A01_PSW8013_cmd, A01_logfile
+import A01_logfile
+import pyvisa
 import time
 import random
+from instrument.A01_PSW8013_cmd import PSW8013CMD
 
 #init_csv_header_data = ['Item', 'Error', 'read voltage']
 file_date = time.strftime("%m%d", time.localtime())
@@ -24,7 +26,7 @@ while True:
         error_count = int(b[1])
 
     try:
-        PSW = A01_PSW8013_cmd.PSW8013CMD()
+        PSW = PSW8013CMD()
         rm = pyvisa.ResourceManager()
         rm.close()
         time.sleep(0.1)
